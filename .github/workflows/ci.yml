@@ -17,6 +17,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Pull Python Base Image With Retry
+        run: |
+          for i in 1 2 3; do
+            docker pull python:3.11-slim && break
+            echo "Docker pull failed. Retrying in 15 seconds..."
+            sleep 15
+          done
+
       - name: Build SAST Scanner Image
         run: |
           docker build \
