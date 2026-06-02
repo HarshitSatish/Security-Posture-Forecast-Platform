@@ -10,27 +10,19 @@ on:
       - main
 
 jobs:
-  repo-check:
+  docker-build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Show Repository Structure
+      - name: Build SAST Scanner Image
         run: |
-          pwd
-          ls -R
+          docker build \
+            -t sast-scanner:latest \
+            ./services/sast-scanner
 
-      - name: Validate Project Structure
+      - name: Verify Image Exists
         run: |
-          test -d frontend
-          test -d services/sast-scanner
-          test -d services/pentest-scanner
-          test -d services/score-service
-          test -d services/forecast-engine
-          test -d infrastructure/terraform
-          echo "Project structure exists."
-
-      - name: Success
-        run: echo "CI Pipeline Passed"
+          docker images
