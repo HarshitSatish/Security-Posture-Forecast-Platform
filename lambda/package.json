@@ -1,0 +1,10 @@
+{
+  "name": "lambda-orchestrator",
+  "version": "1.0.0",
+  "main": "handler.js",
+  "scripts": { "start": "node handler.js" },
+  "dependencies": {
+    "@aws-sdk/client-ecs": "^3.0.0",
+    "@aws-sdk/client-sns": "^3.0.0"
+  }
+}
