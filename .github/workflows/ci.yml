@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  repo-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Show Repository Structure
+        run: |
+          pwd
+          ls -R
+
+      - name: Validate Project Structure
+        run: |
+          test -d frontend
+          test -d services/sast-scanner
+          test -d services/pentest-scanner
+          test -d services/score-service
+          test -d services/forecast-engine
+          test -d infrastructure/terraform
+          echo "Project structure exists."
+
+      - name: Success
+        run: echo "CI Pipeline Passed"
