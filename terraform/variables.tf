@@ -16,10 +16,14 @@ variable "environment" {
   default     = "dev"
 }
 
-variable "alert_email" {
-  description = "Email address for SNS security alerts"
-  type        = string
-  # Set in terraform.tfvars (not committed — add to .gitignore)
+variable "alert_emails" {
+  description = "List of email addresses for SNS security alerts"
+  type        = list(string)
+  default     = [
+    "satishkumar.h@northeastern.edu",
+    "kattepur.a@northeastern.edu",
+    "surdas.s@northeastern.edu"
+  ]
 }
 
 variable "scan_schedule" {
