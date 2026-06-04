@@ -1,2 +1,1 @@
--e # vpc.tf — add resource blocks here
-# Owner: Harshit Satishkumar
+# vpc.tf — add resource blocks here
