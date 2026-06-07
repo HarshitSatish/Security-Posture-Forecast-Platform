@@ -59,5 +59,31 @@ jobs:
           npm install
           npm test
 
-      - name: CI Complete
-        run: echo "CI pipeline passed successfully."
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push SAST Image to ECR
+        run: |
+          docker build -t security-forecast-sast-scanner ./sast
+          docker tag security-forecast-sast-scanner:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-sast-scanner:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-sast-scanner:latest
+
+      - name: Build and Push Pentest Image to ECR
+        run: |
+          docker build -t security-forecast-pentest-scanner ./pentest
+          docker tag security-forecast-pentest-scanner:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-pentest-scanner:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-pentest-scanner:latest
+
+      - name: CI/CD Complete
+        run: echo "CI/CD pipeline passed and scanner images pushed to ECR."
