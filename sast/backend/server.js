@@ -1,4 +1,5 @@
 const express = require("express");
+const { persistScanResult } = require("./storage");
 
 const app = express();
 app.use(express.json());
@@ -10,47 +11,20 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.post("/scan/code", (req, res) => {
+app.post("/scan/code", async (req, res) => {
   const code = req.body.code || "";
+  const targetId = req.body.target_id || "local-code-scan";
 
   const findings = [];
 
   const rules = [
-    {
-      pattern: /password/i,
-      type: "Hardcoded Secret",
-      severity: "HIGH"
-    },
-    {
-      pattern: /eval\s*\(/i,
-      type: "Dangerous eval()",
-      severity: "HIGH"
-    },
-    {
-      pattern: /document\.write/i,
-      type: "Potential XSS",
-      severity: "MEDIUM"
-    },
-    {
-      pattern: /innerHTML/i,
-      type: "Unsafe HTML Injection",
-      severity: "MEDIUM"
-    },
-    {
-      pattern: /api[_-]?key/i,
-      type: "Exposed API Key",
-      severity: "HIGH"
-    },
-    {
-      pattern: /secret[_-]?key/i,
-      type: "Exposed Secret Key",
-      severity: "HIGH"
-    },
-    {
-      pattern: /localStorage/i,
-      type: "Sensitive Data In Local Storage",
-      severity: "MEDIUM"
-    }
+    { pattern: /password/i, type: "Hardcoded Secret", severity: "HIGH" },
+    { pattern: /eval\s*\(/i, type: "Dangerous eval()", severity: "HIGH" },
+    { pattern: /document\.write/i, type: "Potential XSS", severity: "MEDIUM" },
+    { pattern: /innerHTML/i, type: "Unsafe HTML Injection", severity: "MEDIUM" },
+    { pattern: /api[_-]?key/i, type: "Exposed API Key", severity: "HIGH" },
+    { pattern: /secret[_-]?key/i, type: "Exposed Secret Key", severity: "HIGH" },
+    { pattern: /localStorage/i, type: "Sensitive Data In Local Storage", severity: "MEDIUM" }
   ];
 
   rules.forEach((rule) => {
@@ -64,7 +38,10 @@ app.post("/scan/code", (req, res) => {
     }
   });
 
-  res.json({
+  const scanResult = {
+    scan_id: `sast-${Date.now()}`,
+    target_id: targetId,
+    timestamp: new Date().toISOString(),
     service: "sast-scanner",
     scan_type: "SAST",
     status: "completed",
@@ -72,6 +49,13 @@ app.post("/scan/code", (req, res) => {
     medium: findings.filter((f) => f.severity === "MEDIUM").length,
     low: findings.filter((f) => f.severity === "LOW").length,
     findings
+  };
+
+  const storage = await persistScanResult(scanResult);
+
+  res.json({
+    ...scanResult,
+    storage
   });
 });
 
