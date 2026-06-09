@@ -128,3 +128,29 @@ resource "aws_ecs_service" "dashboard" {
     Name = "${var.project_name}-dashboard-service"
   }
 }
+
+resource "aws_ecs_service" "dashboard_alb" {
+  name            = "${var.project_name}-dashboard-alb"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.dashboard.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.dashboard.arn
+    container_name   = "dashboard"
+    container_port   = 80
+  }
+
+  depends_on = [aws_lb_listener.dashboard]
+
+  tags = {
+    Name = "${var.project_name}-dashboard-alb-service"
+  }
+}
