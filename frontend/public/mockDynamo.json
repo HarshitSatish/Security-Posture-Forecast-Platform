@@ -1,0 +1,26 @@
+[
+  {
+    "appId": "APP#1",
+    "sastFindings": 2,
+    "pentestFindings": 1,
+    "timestamp": "2026-06-08T13:15:41.560Z",
+    "score": 55,
+    "riskLevel": "High Risk"
+  },
+  {
+    "appId": "APP#2",
+    "sastFindings": 0,
+    "pentestFindings": 0,
+    "timestamp": "2026-06-08T13:15:41.566Z",
+    "score": 100,
+    "riskLevel": "Safe"
+  },
+  {
+    "appId": "APP#3",
+    "sastFindings": 5,
+    "pentestFindings": 3,
+    "timestamp": "2026-06-08T13:15:41.566Z",
+    "score": 0,
+    "riskLevel": "High Risk"
+  }
+]
