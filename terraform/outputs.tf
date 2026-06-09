@@ -15,3 +15,8 @@ output "ecr_dashboard_url" {
   description = "ECR URL for dashboard image"
   value       = aws_ecr_repository.dashboard.repository_url
 }
+
+output "dashboard_url" {
+  description = "Public URL for the React dashboard"
+  value       = "http://${aws_lb.dashboard.dns_name}"
+}
