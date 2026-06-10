@@ -1,4 +1,3 @@
-# ecs.tf — add resource blocks here
 # ecs.tf
 
 resource "aws_ecs_cluster" "main" {
@@ -22,6 +21,13 @@ resource "aws_ecs_task_definition" "sast_scanner" {
     name      = "sast-scanner"
     image     = "${aws_ecr_repository.sast_scanner.repository_url}:latest"
     essential = true
+
+    environment = [
+      { name = "AUTO_SCAN",           value = "true" },
+      { name = "AWS_REGION",          value = var.aws_region },
+      { name = "SCAN_RESULTS_TABLE",  value = "${var.project_name}-scan-results" },
+      { name = "REPORT_BUCKET",       value = "${var.project_name}-reports-${var.environment}" }
+    ]
 
     portMappings = [{
       containerPort = 3000
@@ -57,6 +63,14 @@ resource "aws_ecs_task_definition" "pentest_scanner" {
     image     = "${aws_ecr_repository.pentest_scanner.repository_url}:latest"
     essential = true
 
+    environment = [
+      { name = "AUTO_SCAN",           value = "true" },
+      { name = "AWS_REGION",          value = var.aws_region },
+      { name = "SCAN_RESULTS_TABLE",  value = "${var.project_name}-scan-results" },
+      { name = "REPORT_BUCKET",       value = "${var.project_name}-reports-${var.environment}" },
+      { name = "SCAN_TARGET_URL",     value = "http://localhost:4000" }
+    ]
+
     portMappings = [{
       containerPort = 3000
       protocol      = "tcp"
@@ -90,6 +104,12 @@ resource "aws_ecs_task_definition" "dashboard" {
     name      = "dashboard"
     image     = "${aws_ecr_repository.dashboard.repository_url}:latest"
     essential = true
+
+    environment = [
+      { name = "AWS_REGION",         value = var.aws_region },
+      { name = "SCAN_RESULTS_TABLE", value = "${var.project_name}-scan-results" },
+      { name = "REPORT_BUCKET",      value = "${var.project_name}-reports-${var.environment}" }
+    ]
 
     portMappings = [{
       containerPort = 80
