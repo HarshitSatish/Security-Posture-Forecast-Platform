@@ -11,10 +11,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.post("/scan/code", async (req, res) => {
-  const code = req.body.code || "";
-  const targetId = req.body.target_id || "local-code-scan";
-
+async function runScan(code, targetId = "local-code-scan") {
   const findings = [];
 
   const rules = [
@@ -53,16 +50,43 @@ app.post("/scan/code", async (req, res) => {
 
   const storage = await persistScanResult(scanResult);
 
-  res.json({
+  return {
     ...scanResult,
     storage
-  });
+  };
+}
+
+app.post("/scan/code", async (req, res) => {
+  const code = req.body.code || "";
+  const targetId = req.body.target_id || "local-code-scan";
+
+  const result = await runScan(code, targetId);
+  res.json(result);
 });
 
-if (require.main === module) {
+if (process.env.AUTO_SCAN === "true") {
+  console.log("ECS auto-scan mode — starting SAST scan...");
+
+  const sampleCode =
+    process.env.SCAN_CODE ||
+    'const api_key="demo"; localStorage.setItem("token", "demo");';
+
+  const targetId = process.env.SCAN_TARGET || "ecs-auto-sast-scan";
+
+  runScan(sampleCode, targetId)
+    .then((result) => {
+      console.log("Auto-scan complete:", JSON.stringify(result, null, 2));
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("Auto-scan failed:", err);
+      process.exit(1);
+    });
+} else if (require.main === module) {
   app.listen(3000, () => {
     console.log("SAST scanner running on port 3000");
   });
 }
 
 module.exports = app;
+module.exports.runScan = runScan;
