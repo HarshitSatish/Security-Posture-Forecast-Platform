@@ -1,34 +1,84 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
+const AWS = require("aws-sdk");
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-// Load mock data
-const data = JSON.parse(
-  fs.readFileSync("../forecast/mockDynamo.json", "utf-8")
-);
+// ======================
+// AWS DYNAMODB SETUP
+// ======================
+AWS.config.update({ region: "us-east-1" });
 
-// Scores API
-app.get("/scores", (req, res) => {
-  res.json(data.map(d => ({
-    appId: d.appId,
-    score: d.score,
-    riskLevel: d.riskLevel
-  })));
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
+
+// Table name (from Terraform)
+const TABLE_NAME = "spandan-security-forecast-scan-results";
+
+
+// ======================
+// SCORES API (DYNAMODB)
+// ======================
+app.get("/scores", async (req, res) => {
+  try {
+    const params = {
+      TableName: TABLE_NAME
+    };
+
+    const result = await dynamoDB.scan(params).promise();
+
+    const formatted = result.Items.map(item => ({
+      appId: item.appId || item.scan_id,
+      score: item.score,
+      riskLevel: item.riskLevel
+    }));
+
+    res.json(formatted);
+
+  } catch (err) {
+    console.error("DynamoDB error (/scores):", err);
+    res.status(500).json({ error: "Failed to fetch scores" });
+  }
 });
 
-// Forecast API
-app.get("/forecast", (req, res) => {
-  res.json({
-    message: "Risk trend analysis running",
-    prediction: "APP#1 and APP#3 trending HIGH RISK in 14 days"
-  });
+
+// ======================
+// FORECAST API (DYNAMIC)
+// ======================
+app.get("/forecast", async (req, res) => {
+  try {
+    const params = {
+      TableName: TABLE_NAME
+    };
+
+    const result = await dynamoDB.scan(params).promise();
+
+    const items = result.Items || [];
+
+    const highRiskApps = items
+      .filter(item => item.riskLevel === "High Risk")
+      .map(item => item.appId || item.scan_id);
+
+    res.json({
+      message: "Risk trend analysis running",
+      prediction:
+        highRiskApps.length > 0
+          ? `${highRiskApps.join(" and ")} trending HIGH RISK in 14 days`
+          : "No high risk trends detected"
+    });
+
+  } catch (err) {
+    console.error("DynamoDB error (/forecast):", err);
+    res.status(500).json({ error: "Failed to generate forecast" });
+  }
 });
 
-// Status API
+
+// ======================
+// STATUS API
+// ======================
 app.get("/status", (req, res) => {
   res.json({
     pipeline: "healthy",
@@ -37,6 +87,10 @@ app.get("/status", (req, res) => {
   });
 });
 
+
+// ======================
+// START SERVER
+// ======================
 app.listen(3001, () => {
   console.log("API running on http://localhost:3001");
 });

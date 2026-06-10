@@ -1,24 +1,64 @@
 import React, { useEffect, useState } from "react";
 
 function App() {
-  const [data, setData] = useState([]);
+  const [scores, setScores] = useState([]);
+  const [forecast, setForecast] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // ======================
+  // FETCH LIVE API DATA
+  // ======================
   useEffect(() => {
-    fetch("/mockDynamo.json")
-      .then((res) => res.json())
-      .then((json) => setData(json))
-      .catch((err) => console.log("Error loading data:", err));
+    const fetchData = async () => {
+      try {
+        const [scoresRes, forecastRes, statusRes] = await Promise.all([
+          fetch("http://localhost:3001/scores"),
+          fetch("http://localhost:3001/forecast"),
+          fetch("http://localhost:3001/status"),
+        ]);
+
+        const scoresData = await scoresRes.json();
+        const forecastData = await forecastRes.json();
+        const statusData = await statusRes.json();
+
+        setScores(scoresData);
+        setForecast(forecastData);
+        setStatus(statusData);
+      } catch (err) {
+        console.log("Error loading data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
+
+  if (loading) {
+    return <div style={{ padding: "20px" }}>Loading dashboard...</div>;
+  }
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
       <h1>Security Posture Forecast Platform</h1>
 
       <p>
-        Live dashboard showing security health scores, risk classification, and forecast output.
+        Live dashboard connected to AWS DynamoDB + API layer
       </p>
 
-      <h3>Scan Results (DynamoDB Simulation)</h3>
+      {/* ======================
+          STATUS SECTION
+      ====================== */}
+      <h3>Status</h3>
+      <p>Pipeline: {status.pipeline}</p>
+      <p>Last Run: {status.lastRun}</p>
+      <p>ECS: {status.ecs}</p>
+
+      {/* ======================
+          SCORES TABLE
+      ====================== */}
+      <h3>Scan Results (Live DynamoDB Data)</h3>
 
       <table border="1" cellPadding="10">
         <thead>
@@ -29,7 +69,7 @@ function App() {
           </tr>
         </thead>
         <tbody>
-          {data.map((item, i) => (
+          {scores.map((item, i) => (
             <tr key={i}>
               <td>{item.appId}</td>
               <td>{item.score}</td>
@@ -39,9 +79,20 @@ function App() {
         </tbody>
       </table>
 
+      {/* ======================
+          FORECAST SECTION
+      ====================== */}
       <h3 style={{ marginTop: "20px", color: "darkred" }}>
-        Forecast: Risk trend analysis running (14-day projection)
+        Forecast
       </h3>
+
+      <p>
+        {forecast.message}
+      </p>
+
+      <h4 style={{ color: "red" }}>
+        {forecast.prediction}
+      </h4>
     </div>
   );
 }
