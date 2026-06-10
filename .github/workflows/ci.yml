@@ -25,7 +25,7 @@ jobs:
           test -d forecast
           test -d lambda
           test -d terraform
-          test -d dashboard
+          test -d frontend
           echo "Project structure valid."
 
       - name: Pull Node Base Image With Retry
@@ -36,11 +36,22 @@ jobs:
             sleep 15
           done
 
+      - name: Pull Nginx Base Image With Retry
+        run: |
+          for i in 1 2 3; do
+            docker pull nginx:alpine && break
+            echo "Docker pull failed. Retrying in 15 seconds..."
+            sleep 15
+          done
+
       - name: Build SAST Scanner Image
         run: docker build -t sast-scanner:latest ./sast
 
       - name: Build Pentest Scanner Image
         run: docker build -t pentest-scanner:latest ./pentest
+
+      - name: Build Dashboard Image
+        run: docker build -t security-forecast-dashboard ./frontend
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -85,5 +96,19 @@ jobs:
           docker tag security-forecast-pentest-scanner:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-pentest-scanner:latest
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-pentest-scanner:latest
 
+      - name: Build and Push Dashboard Image to ECR
+        run: |
+          docker build -t security-forecast-dashboard ./frontend
+          docker tag security-forecast-dashboard:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-dashboard:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-dashboard:latest
+
+      - name: Force ECS Dashboard Redeployment
+        run: |
+          aws ecs update-service \
+            --cluster security-forecast-cluster \
+            --service security-forecast-dashboard-alb \
+            --force-new-deployment \
+            --region us-east-1
+
       - name: CI/CD Complete
-        run: echo "CI/CD pipeline passed and scanner images pushed to ECR."
+        run: echo "CI/CD pipeline passed and all images were pushed to ECR."
