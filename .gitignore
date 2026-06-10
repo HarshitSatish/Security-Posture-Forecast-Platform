@@ -33,3 +33,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+AWSCLIV2.pkg
+lambda/function.zip
+out.json
+terraform/out.json
