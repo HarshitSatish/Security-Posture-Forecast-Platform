@@ -155,6 +155,7 @@ resource "aws_ecs_service" "dashboard_alb" {
   task_definition = aws_ecs_task_definition.dashboard.arn
   desired_count   = 1
   launch_type     = "FARGATE"
+  health_check_grace_period_seconds = 120
 
   network_configuration {
     subnets          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
