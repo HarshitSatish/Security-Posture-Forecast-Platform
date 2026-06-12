@@ -26,13 +26,14 @@ jobs:
           test -d lambda
           test -d terraform
           test -d frontend
+          test -d api
           echo "Project structure valid."
 
       - name: Pull Node Base Image With Retry
         run: |
           for i in 1 2 3; do
             docker pull node:18-alpine && break
-            echo "Docker pull failed. Retrying in 15 seconds..."
+            echo "Docker pull failed. Retrying..."
             sleep 15
           done
 
@@ -40,10 +41,13 @@ jobs:
         run: |
           for i in 1 2 3; do
             docker pull nginx:alpine && break
-            echo "Docker pull failed. Retrying in 15 seconds..."
+            echo "Docker pull failed. Retrying..."
             sleep 15
           done
 
+      # =====================
+      # BUILD IMAGES (LOCAL)
+      # =====================
       - name: Build SAST Scanner Image
         run: docker build -t sast-scanner:latest ./sast
 
@@ -53,6 +57,12 @@ jobs:
       - name: Build Dashboard Image
         run: docker build -t security-forecast-dashboard ./frontend
 
+      - name: Build API Image
+        run: docker build -t security-forecast-api ./api
+
+      # =====================
+      # NODE TESTING
+      # =====================
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -70,6 +80,9 @@ jobs:
           npm install
           npm test
 
+      # =====================
+      # AWS AUTH
+      # =====================
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -84,6 +97,9 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      # =====================
+      # PUSH TO ECR
+      # =====================
       - name: Build and Push SAST Image to ECR
         run: |
           docker build -t security-forecast-sast-scanner ./sast
@@ -102,6 +118,15 @@ jobs:
           docker tag security-forecast-dashboard:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-dashboard:latest
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-dashboard:latest
 
+      - name: Build and Push API Image to ECR
+        run: |
+          docker build -t security-forecast-api ./api
+          docker tag security-forecast-api:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-api:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-api:latest
+
+      # =====================
+      # ECS DEPLOYMENT
+      # =====================
       - name: Force ECS Dashboard Redeployment
         run: |
           aws ecs update-service \
@@ -110,5 +135,16 @@ jobs:
             --force-new-deployment \
             --region us-east-1
 
+      - name: Force ECS API Redeployment
+        run: |
+          aws ecs update-service \
+            --cluster security-forecast-cluster \
+            --service security-forecast-api \
+            --force-new-deployment \
+            --region us-east-1
+
+      # =====================
+      # COMPLETE
+      # =====================
       - name: CI/CD Complete
-        run: echo "CI/CD pipeline passed and all images were pushed to ECR."
+        run: echo "CI/CD pipeline passed and all images were built and pushed to ECR."
