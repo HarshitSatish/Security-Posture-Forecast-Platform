@@ -14,9 +14,8 @@ AWS.config.update({ region: "us-east-1" });
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
-// ✅ USE CORRECT TABLE NAME (IMPORTANT)
+// ✅ Correct table name
 const TABLE_NAME = "security-forecast-scan-results";
-
 
 // ======================
 // ROOT CHECK
@@ -25,33 +24,32 @@ app.get("/", (req, res) => {
   res.send("API is running");
 });
 
-
 // ======================
-// ✅ MAIN API (USED BY FRONTEND)
+// MAIN API - RESULTS
 // ======================
 app.get("/api/results", async (req, res) => {
   try {
     const params = {
-      TableName: TABLE_NAME
+      TableName: TABLE_NAME,
     };
 
     const result = await dynamoDB.scan(params).promise();
 
-    const formatted = (result.Items || []).map(item => ({
-      appId: item.appId || item.PK || item.scan_id,
-      timestamp: item.timestamp || item.SK,
-      score: item.score,
-      riskLevel: item.riskLevel
+    console.log("DynamoDB Items Count:", result.Items?.length || 0);
+
+    const formatted = (result.Items || []).map((item) => ({
+      appId: item.appId || item.PK || item.scan_id || "N/A",
+      timestamp: item.timestamp || item.SK || "N/A",
+      score: item.score ?? 0,
+      riskLevel: item.riskLevel || "Unknown",
     }));
 
     res.json(formatted);
-
   } catch (err) {
     console.error("DynamoDB error (/api/results):", err);
     res.status(500).json({ error: "Failed to fetch data" });
   }
 });
-
 
 // ======================
 // FORECAST API
@@ -59,30 +57,30 @@ app.get("/api/results", async (req, res) => {
 app.get("/api/forecast", async (req, res) => {
   try {
     const params = {
-      TableName: TABLE_NAME
+      TableName: TABLE_NAME,
     };
 
     const result = await dynamoDB.scan(params).promise();
     const items = result.Items || [];
 
     const highRiskApps = items
-      .filter(item => item.riskLevel === "High Risk")
-      .map(item => item.appId || item.PK || item.scan_id);
+      .filter((item) =>
+        (item.riskLevel || "").toLowerCase().includes("high")
+      )
+      .map((item) => item.appId || item.PK || item.scan_id || "Unknown App");
 
     res.json({
       message: "Risk trend analysis running",
       prediction:
         highRiskApps.length > 0
           ? `${highRiskApps.join(", ")} trending HIGH RISK in 14 days`
-          : "No high risk trends detected"
+          : "No high risk trends detected",
     });
-
   } catch (err) {
     console.error("DynamoDB error (/api/forecast):", err);
     res.status(500).json({ error: "Failed to generate forecast" });
   }
 });
-
 
 // ======================
 // STATUS API
@@ -91,15 +89,14 @@ app.get("/api/status", (req, res) => {
   res.json({
     pipeline: "healthy",
     lastRun: new Date().toISOString(),
-    ecs: "running"
+    ecs: "running",
   });
 });
-
 
 // ======================
 // START SERVER
 // ======================
-const PORT = 3000; // ✅ IMPORTANT for ECS
+const PORT = 3000; // ECS requirement
 app.listen(PORT, () => {
-  console.log(`API running on port ${PORT}`);
+  console.log(`🚀 API running on port ${PORT}`);
 });
