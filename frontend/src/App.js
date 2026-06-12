@@ -13,9 +13,9 @@ function App() {
     const fetchData = async () => {
       try {
         const [scoresRes, forecastRes, statusRes] = await Promise.all([
-          fetch("http://localhost:3001/scores"),
-          fetch("http://localhost:3001/forecast"),
-          fetch("http://localhost:3001/status"),
+          fetch("http://localhost:3000/api/results"),
+          fetch("http://localhost:3000/api/forecast"),
+          fetch("http://localhost:3000/api/status"),
         ]);
 
         const scoresData = await scoresRes.json();
@@ -25,6 +25,7 @@ function App() {
         setScores(scoresData);
         setForecast(forecastData);
         setStatus(statusData);
+
       } catch (err) {
         console.log("Error loading data:", err);
       } finally {
@@ -35,25 +36,30 @@ function App() {
     fetchData();
   }, []);
 
+  // ======================
+  // LOADING STATE
+  // ======================
   if (loading) {
-    return <div style={{ padding: "20px" }}>Loading dashboard...</div>;
+    return (
+      <div style={{ padding: "20px" }}>
+        Loading dashboard...
+      </div>
+    );
   }
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial" }}>
       <h1>Security Posture Forecast Platform</h1>
 
-      <p>
-        Live dashboard connected to AWS DynamoDB + API layer
-      </p>
+      <p>Live dashboard connected to AWS DynamoDB + API layer</p>
 
       {/* ======================
           STATUS SECTION
       ====================== */}
       <h3>Status</h3>
-      <p>Pipeline: {status.pipeline}</p>
-      <p>Last Run: {status.lastRun}</p>
-      <p>ECS: {status.ecs}</p>
+      <p>Pipeline: {status?.pipeline}</p>
+      <p>Last Run: {status?.lastRun}</p>
+      <p>ECS: {status?.ecs}</p>
 
       {/* ======================
           SCORES TABLE
@@ -68,6 +74,7 @@ function App() {
             <th>Risk Level</th>
           </tr>
         </thead>
+
         <tbody>
           {scores.map((item, i) => (
             <tr key={i}>
@@ -86,12 +93,10 @@ function App() {
         Forecast
       </h3>
 
-      <p>
-        {forecast.message}
-      </p>
+      <p>{forecast?.message}</p>
 
       <h4 style={{ color: "red" }}>
-        {forecast.prediction}
+        {forecast?.prediction}
       </h4>
     </div>
   );
