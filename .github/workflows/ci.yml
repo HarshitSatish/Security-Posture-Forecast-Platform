@@ -45,9 +45,6 @@ jobs:
             sleep 15
           done
 
-      # =====================
-      # BUILD IMAGES (LOCAL)
-      # =====================
       - name: Build SAST Scanner Image
         run: docker build -t sast-scanner:latest ./sast
 
@@ -60,9 +57,6 @@ jobs:
       - name: Build API Image
         run: docker build -t security-forecast-api ./api
 
-      # =====================
-      # NODE TESTING
-      # =====================
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -80,9 +74,6 @@ jobs:
           npm install
           npm test
 
-      # =====================
-      # AWS AUTH
-      # =====================
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -97,9 +88,6 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # =====================
-      # PUSH TO ECR
-      # =====================
       - name: Build and Push SAST Image to ECR
         run: |
           docker build -t security-forecast-sast-scanner ./sast
@@ -124,9 +112,6 @@ jobs:
           docker tag security-forecast-api:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-api:latest
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/security-forecast-api:latest
 
-      # =====================
-      # ECS DEPLOYMENT
-      # =====================
       - name: Force ECS Dashboard Redeployment
         run: |
           aws ecs update-service \
@@ -135,16 +120,5 @@ jobs:
             --force-new-deployment \
             --region us-east-1
 
-      - name: Force ECS API Redeployment
-        run: |
-          aws ecs update-service \
-            --cluster security-forecast-cluster \
-            --service security-forecast-api \
-            --force-new-deployment \
-            --region us-east-1
-
-      # =====================
-      # COMPLETE
-      # =====================
       - name: CI/CD Complete
         run: echo "CI/CD pipeline passed and all images were built and pushed to ECR."
