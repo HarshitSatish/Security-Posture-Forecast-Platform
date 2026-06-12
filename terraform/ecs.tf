@@ -95,36 +95,63 @@ resource "aws_ecs_task_definition" "dashboard" {
   family                   = "${var.project_name}-dashboard"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "512"
+  memory                   = "1024"
   execution_role_arn       = data.aws_iam_role.lab_role.arn
   task_role_arn            = data.aws_iam_role.lab_role.arn
 
-  container_definitions = jsonencode([{
-    name      = "dashboard"
-    image     = "${aws_ecr_repository.dashboard.repository_url}:latest"
-    essential = true
+  container_definitions = jsonencode([
+    {
+      name      = "dashboard"
+      image     = "${aws_ecr_repository.dashboard.repository_url}:latest"
+      essential = true
 
-    environment = [
-      { name = "AWS_REGION",         value = var.aws_region },
-      { name = "SCAN_RESULTS_TABLE", value = "${var.project_name}-scan-results" },
-      { name = "REPORT_BUCKET",      value = "${var.project_name}-reports-${var.environment}" }
-    ]
+      environment = [
+        { name = "AWS_REGION",         value = var.aws_region },
+        { name = "SCAN_RESULTS_TABLE", value = "${var.project_name}-scan-results" },
+        { name = "REPORT_BUCKET",      value = "${var.project_name}-reports-${var.environment}" }
+      ]
 
-    portMappings = [{
-      containerPort = 80
-      protocol      = "tcp"
-    }]
+      portMappings = [{
+        containerPort = 80
+        protocol      = "tcp"
+      }]
 
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        "awslogs-group"         = "/ecs/dashboard"
-        "awslogs-region"        = var.aws_region
-        "awslogs-stream-prefix" = "ecs"
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/dashboard"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    },
+    {
+      name      = "api"
+      image     = "${aws_ecr_repository.api.repository_url}:latest"
+      essential = false
+
+      environment = [
+        { name = "AWS_REGION",         value = var.aws_region },
+        { name = "SCAN_RESULTS_TABLE", value = "${var.project_name}-scan-results" },
+        { name = "REPORT_BUCKET",      value = "${var.project_name}-reports-${var.environment}" }
+      ]
+
+      portMappings = [{
+        containerPort = 3000
+        protocol      = "tcp"
+      }]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/dashboard"
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "api"
+        }
       }
     }
-  }])
+  ])
 
   tags = {
     Name = "${var.project_name}-dashboard-task"
