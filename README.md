@@ -43,3 +43,4 @@ See [docs/deployment.md](docs/deployment.md) for full AWS deployment steps.
 ## Cost Estimate
 ~$15–30/month on AWS Learner Lab (scale-to-zero Fargate, DynamoDB on-demand, S3 lifecycle)
 >>>>>>> 4dfe216 (chore: initial repo scaffold with ownership structure)
+
