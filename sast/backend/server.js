@@ -1,6 +1,7 @@
 const express = require("express");
 const { persistScanResult } = require("./storage");
-
+const fs = require("fs");
+const path = require("path");
 const app = express();
 app.use(express.json());
 
@@ -21,7 +22,17 @@ async function runScan(code, targetId = "local-code-scan") {
     { pattern: /innerHTML/i, type: "Unsafe HTML Injection", severity: "MEDIUM" },
     { pattern: /api[_-]?key/i, type: "Exposed API Key", severity: "HIGH" },
     { pattern: /secret[_-]?key/i, type: "Exposed Secret Key", severity: "HIGH" },
-    { pattern: /localStorage/i, type: "Sensitive Data In Local Storage", severity: "MEDIUM" }
+    { pattern: /localStorage/i, type: "Sensitive Data In Local Storage", severity: "MEDIUM" },
+    { pattern: /SELECT\s+\*\s+FROM.+\+/i, type: "Possible SQL Injection", severity: "HIGH" },
+{ pattern: /db\.collection\(.*\)\.(find|findOne|deleteOne)\(req\./i, type: "Possible NoSQL Injection", severity: "HIGH" },
+{ pattern: /exec\s*\(/i, type: "Command Execution", severity: "HIGH" },
+{ pattern: /dangerouslySetInnerHTML/i, type: "React XSS Risk", severity: "HIGH" },
+{ pattern: /\.\.\/\.\.\//i, type: "Path Traversal", severity: "HIGH" },
+{ pattern: /Math\.random/i, type: "Insecure Randomness", severity: "MEDIUM" },
+{ pattern: /console\.log\(.*(password|token|api)/i, type: "Sensitive Data Logging", severity: "MEDIUM" },
+{ pattern: /createHash\(['"](md5|sha1)['"]\)/i, type: "Weak Cryptography", severity: "MEDIUM" },
+{ pattern: /createCipher\(['"]des['"]/i, type: "Weak Encryption Algorithm", severity: "HIGH" },
+{ pattern: /(TODO|FIXME|HACK|XXX).*security/i, type: "Security TODO Comment", severity: "LOW" }
   ];
 
   rules.forEach((rule) => {
@@ -68,8 +79,11 @@ if (process.env.AUTO_SCAN === "true") {
   console.log("ECS auto-scan mode — starting SAST scan...");
 
   const sampleCode =
-    process.env.SCAN_CODE ||
-    'const api_key="demo"; localStorage.setItem("token", "demo");';
+  process.env.SCAN_CODE ||
+  fs.readFileSync(
+    path.join(__dirname, "samples", "test-vulnerable.js"),
+    "utf8"
+  );
 
   const targetId = process.env.SCAN_TARGET || "ecs-auto-sast-scan";
 
