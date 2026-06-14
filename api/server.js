@@ -15,7 +15,7 @@ AWS.config.update({ region: "us-east-1" });
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 // ✅ Correct table name
-const TABLE_NAME = "security-forecast-scan-results";
+const TABLE_NAME = "spandan-security-forecast-scan-results";
 
 // ======================
 // ROOT CHECK
