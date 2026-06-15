@@ -125,21 +125,26 @@ function App() {
     const fetchData = async () => {
       try {
         const [scoresRes, forecastRes, statusRes] = await Promise.all([
-          fetch("http://localhost:3000/api/results"),
-          fetch("http://localhost:3000/api/forecast"),
-          fetch("http://localhost:3000/api/status"),
+          fetch("/api/results"),
+          fetch("/api/forecast"),
+          fetch("/api/status"),
         ]);
 
         setScores(await scoresRes.json());
         setForecast(await forecastRes.json());
         setStatus(await statusRes.json());
+        const scoresData = await scoresRes.json();
+        const forecastData = await forecastRes.json();
+        const statusData = await statusRes.json();
+        setScores(scoresData);
+        setForecast(forecastData);
+        setStatus(statusData);
       } catch (err) {
         console.log(err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -161,6 +166,8 @@ function App() {
         </div>
       </>
     );
+  if (loading) {
+    return <div style={{ padding: "20px" }}>Loading dashboard...</div>;
   }
 
   const condition = getCondition(forecast, scores);
@@ -246,6 +253,39 @@ function App() {
         </div>
       </div>
     </>
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+      <h1>Security Posture Forecast Platform</h1>
+      <p>Live dashboard connected to AWS DynamoDB + API layer</p>
+
+      <h3>Status</h3>
+      <p>Pipeline: {status?.pipeline}</p>
+      <p>Last Run: {status?.lastRun}</p>
+      <p>ECS: {status?.ecs}</p>
+
+      <h3>Scan Results (Live DynamoDB Data)</h3>
+      <table border="1" cellPadding="10">
+        <thead>
+          <tr>
+            <th>Application</th>
+            <th>Score</th>
+            <th>Risk Level</th>
+          </tr>
+        </thead>
+        <tbody>
+          {scores.map((item, i) => (
+            <tr key={i}>
+              <td>{item.appId}</td>
+              <td>{item.score}</td>
+              <td>{item.riskLevel}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h3 style={{ marginTop: "20px", color: "darkred" }}>Forecast</h3>
+      <p>{forecast?.message}</p>
+      <h4 style={{ color: "red" }}>{forecast?.prediction}</h4>
+    </div>
   );
 }
 
