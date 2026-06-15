@@ -8,7 +8,7 @@ resource "aws_lambda_function" "orchestrator" {
   filename      = "${path.module}/../lambda/function.zip"
   handler       = "handler.handler"
   runtime       = "nodejs18.x"
-  timeout       = 60
+  timeout       = 180
 
   environment {
     variables = {
