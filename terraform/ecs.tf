@@ -162,7 +162,7 @@ resource "aws_ecs_service" "dashboard" {
   name            = "${var.project_name}-dashboard"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.dashboard.arn
-  desired_count   = 1
+  desired_count   = 0
   launch_type     = "FARGATE"
 
   network_configuration {
