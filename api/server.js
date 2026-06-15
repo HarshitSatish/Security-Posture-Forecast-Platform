@@ -15,7 +15,7 @@ AWS.config.update({ region: "us-east-1" });
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 // ✅ Correct table name
-const TABLE_NAME = "security-forecast-scan-results";
+const TABLE_NAME = "spandan-security-forecast-scan-results";
 
 // ======================
 // ROOT CHECK
@@ -38,11 +38,23 @@ app.get("/api/results", async (req, res) => {
     console.log("DynamoDB Items Count:", result.Items?.length || 0);
 
     const formatted = (result.Items || []).map((item) => ({
-      appId: item.appId || item.PK || item.scan_id || "N/A",
-      timestamp: item.timestamp || item.SK || "N/A",
-      score: item.score ?? 0,
-      riskLevel: item.riskLevel || "Unknown",
-    }));
+  appId: item.appId || item.PK || item.scan_id || "N/A",
+  timestamp: item.timestamp || item.SK || "N/A",
+  scan_type: item.scan_type || "Unknown",
+  score: item.score ?? 0,
+  riskLevel: item.riskLevel || "Unknown",
+
+  high: item.high ?? item.sastFindings ?? 0,
+  medium: item.medium ?? 0,
+  low: item.low ?? 0,
+  totalFindings:
+    item.totalFindings ??
+    ((item.high || 0) + (item.medium || 0) + (item.low || 0)),
+
+  forecastMessage: item.forecastMessage || "",
+  recommendation: item.recommendation || "",
+  report_s3_key: item.report_s3_key || ""
+}));
 
     res.json(formatted);
   } catch (err) {
