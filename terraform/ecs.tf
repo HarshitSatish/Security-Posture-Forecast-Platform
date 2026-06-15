@@ -68,7 +68,7 @@ resource "aws_ecs_task_definition" "pentest_scanner" {
       { name = "AWS_REGION",          value = var.aws_region },
       { name = "SCAN_RESULTS_TABLE",  value = "${var.project_name}-scan-results" },
       { name = "REPORT_BUCKET",       value = "${var.project_name}-reports-${var.environment}" },
-      { name = "SCAN_TARGET_URL",     value = "http://localhost:4000" }
+      { name = "SCAN_TARGET_URL",     value = "https://restful-api.dev/" }
     ]
 
     portMappings = [{
