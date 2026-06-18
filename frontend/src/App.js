@@ -125,9 +125,9 @@ function App() {
     const fetchData = async () => {
       try {
         const [scoresRes, forecastRes, statusRes] = await Promise.all([
-          fetch("/api/results"),
-          fetch("/api/forecast"),
-          fetch("/api/status"),
+          fetch("http://localhost:3000/api/results"),
+          fetch("http://localhost:3000/api/forecast"),
+          fetch("http://localhost:3000/api/status"),
         ]);
 
         setScores(await scoresRes.json());
